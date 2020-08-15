@@ -1,6 +1,7 @@
 import { TodoListModel } from "./model/TodoListModel.js"
 import { TodoItemModel } from "./model/TodoItemModel.js"
-import { element, render } from "./view/html-util.js";
+import { render } from "./view/html-util.js";
+import { TodoListView } from "./view/TodoListView.js";
 export class App {
   constructor() {
     // TodoListの初期化
@@ -18,45 +19,17 @@ export class App {
 
     // TodoListModelの状態が更新されたら表示を更新する
     this.todoListModel.onChange(() => {
-      // TodoリストをまとめるList要素
-      const todoListElement = element`<ul />`;
-      // それぞれのTodoItem要素をtodoListElement以下へ追加する
+      // TodoListModelから、todoアイテムリストを取得する
       const todoItems = this.todoListModel.getTodoItems();
-      todoItems.forEach(item => {
-        // 追加するTodoアイテムの要素(li要素)を作成する
-        const todoItemElement = item.completed
-          ? element`<li>
-            <input type="checkbox" class="checkbox" checked>
-            <s>${item.title}</s>
-            <button class="delete">x</button>
-          </li>`
-          : element`<li>
-            <input type="checkbox" class="checkbox">
-            ${item.title}
-            <button class="delete">x</button>
-          </li>`;
-
-        // チェックボックスがトグルしたときのイベントにリスナー関数を登録
-        const inputCheckboxElement = todoItemElement.querySelector(".checkbox");
-        inputCheckboxElement.addEventListener("change", () => {
-          // 指定したTodoアイテムの完了状態を反転させる
-          this.todoListModel.updateTodo({
-            id: item.id,
-            completed: !item.completed
-          });
-        });
-
-        // 削除ボタン(x)がクリックされたときにTodoListModelからアイテムを削除する
-        const deleteButtonElement = todoItemElement.querySelector(".delete");
-        deleteButtonElement.addEventListener("click", () => {
-          this.todoListModel.deleteTodo({
-            id: item.id
-          });
-        });
-
-        // アイテム要素(li要素)をulに追加
-        todoListElement.appendChild(todoItemElement);
-
+      // Todoアイテムリストに対応するViewを生成する
+      const todoListView = new TodoListView();
+      const todoListElement = todoListView.createElement(todoItems, {
+        onUpdateTodo: ({ id, completed }) => {
+          this.todoListModel.updateTodo({ id, completed })
+        },
+        onDeleteTodo: ({ id }) => {
+          this.todoListModel.deleteTodo({ id });
+        }
       });
       // containerElementの中身をtodoListElementで上書きする
       render(todoListElement, containerElement);
